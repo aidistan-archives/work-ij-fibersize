@@ -7,6 +7,9 @@ import java.awt.*;
 
 public class Cell_Segmentation implements PlugInFilter {
 
+  // Constant
+  public static final Boolean showProcedure = false;
+
   // External
   public RoiManager     roiMgr;
   public ImagePlus      _imp;
@@ -34,6 +37,11 @@ public class Cell_Segmentation implements PlugInFilter {
 
     // Create a copy in Gray8 format
     create_gray8_copy();
+    if (showProcedure) get_snapshot("1. Gray8 Format");
+
+    // Auto threshold
+    ip.autoThreshold();
+    if (showProcedure) get_snapshot("2. Auto Threshold");
   }
 
   public void create_gray8_copy() {
@@ -46,6 +54,13 @@ public class Cell_Segmentation implements PlugInFilter {
 
     // Create a new ImagePlus to display
     imp = new ImagePlus("Cell Segmentation", ip);
+    imp.show();
+    imp.updateAndDraw();
+  }
+
+  public void get_snapshot(String title) {
+    ImageProcessor ip = this.ip.duplicate();
+    ImagePlus imp = new ImagePlus(title, ip);
     imp.show();
     imp.updateAndDraw();
   }
