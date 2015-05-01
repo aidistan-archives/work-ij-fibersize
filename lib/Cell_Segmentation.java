@@ -11,28 +11,20 @@ public class Cell_Segmentation implements PlugInFilter {
   public static final Boolean showProcedure = false;
 
   // External
-  public RoiManager     roiMgr;
-  public ImagePlus      _imp;
-  public ImageProcessor _ip;
+  public ImagePlus      _imp; // Original ImagePlus
+  public ImageProcessor _ip;  // Original ImageProcessor
 
   // Internal
   public ImagePlus      imp;
   public ImageProcessor ip;
+  public Roi[]          rois;
 
   public int setup(String arg, ImagePlus _imp) {
-    // Open ROI Manager
-    roiMgr = RoiManager.getInstance();
-    if (roiMgr == null)
-    roiMgr = new RoiManager();
-
-    // Save original ImagePlus
     this._imp = _imp;
-
     return DOES_ALL;
   }
 
   public void run(ImageProcessor _ip) {
-    // Save original ImageProcessor
     this._ip = _ip;
 
     // Create a copy in Gray8 format
@@ -42,6 +34,9 @@ public class Cell_Segmentation implements PlugInFilter {
     // Auto threshold
     ip.autoThreshold();
     if (showProcedure) get_snapshot("2. Auto Threshold");
+
+    // Analyze particles
+    analyze_particles();
   }
 
   public void create_gray8_copy() {
@@ -56,6 +51,29 @@ public class Cell_Segmentation implements PlugInFilter {
     imp = new ImagePlus("Cell Segmentation", ip);
     imp.show();
     imp.updateAndDraw();
+  }
+
+  public void analyze_particles() {
+    // Get ParticleAnalyzer to work
+    ParticleAnalyzer pa = new ParticleAnalyzer();
+    pa.showDialog();
+    pa.analyze(imp, ip);
+
+    // Get rois out
+    RoiManager roiMgr = RoiManager.getInstance();
+    rois = roiMgr.getRoisAsArray();
+    roiMgr.reset();
+    roiMgr.close();
+    imp.close();
+
+    // Turn our attention back
+    roiMgr = new RoiManager();
+    for(int i = 0; i < rois.length; i++) {
+      Roi roi = rois[i];
+      roi = new PolygonRoi(roi.getInterpolatedPolygon(10, false), Roi.POLYGON);
+      roi.setName(Integer.toString(i+1));
+      roiMgr.addRoi(roi);
+    }
   }
 
   public void get_snapshot(String title) {
