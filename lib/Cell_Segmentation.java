@@ -5,6 +5,12 @@ import ij.plugin.frame.*;
 import ij.plugin.filter.*;
 import java.awt.*;
 
+/**
+ * @version v1.0 (May 1, 2015) - first implementation of this plugin
+ * @author Aidi Stan (aidistan@live.cn)
+ * @license the MIT license
+ */
+
 public class Cell_Segmentation implements PlugInFilter {
 
   // Constant
