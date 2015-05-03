@@ -10,4 +10,4 @@
 3. Install the file *Cell_Segmentation.java* you just downloaded
   - open your brand-new ImageJ (if you just updated it)
   - `Ctrl + Shift + M` should prompt the dialog you need
-4. Open the image, choose *Cell Segmentation* under the *Plugins* menu, click *Run* button and ... Tada ~
+4. Open the image, choose *Cell Segmentation* under the *Plugins* menu
