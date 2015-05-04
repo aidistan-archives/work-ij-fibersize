@@ -18,7 +18,7 @@ public class Cell_Segmentation extends PlugInFrame {
 
   // Constant
   public final int WINDOW_WIDTH = 300;
-  public final int WINDOW_HEIGHT = 275;
+  public final int WINDOW_HEIGHT = 250;
 
   // External
   public ImagePlus _imp;
@@ -38,16 +38,16 @@ public class Cell_Segmentation extends PlugInFrame {
       instance.toFront();
       return;
     } else {
+      // Initialize instance variables
+      _imp = IJ.getImage();
+      instance = this;
+      imp = null;
+
+      // Update the window
       WindowManager.addWindow(this);
       setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
       GUI.center(this);
       setVisible(true);
-
-      // Initialize
-      _imp = IJ.getImage();
-      instance = this;
-      imp = null;
-      sclBar.setValue(get_current_ip().getAutoThreshold());
     }
   }
 
@@ -56,7 +56,7 @@ public class Cell_Segmentation extends PlugInFrame {
   // return the title bar height.
   public void addNotify() {
     super.addNotify();
-    int top = getInsets().top + 32;
+    int top = getInsets().top + 10;
     Label label;
     Button button;
 
@@ -76,6 +76,7 @@ public class Cell_Segmentation extends PlugInFrame {
 
     sclBar = new Scrollbar(Scrollbar.HORIZONTAL, 0, 1, 0, 255);
     sclBar.setBounds(100, top + 28, WINDOW_WIDTH - 120, 16);
+    sclBar.setValue(get_current_ip().getAutoThreshold());
     add(sclBar);
 
     button = new Button("Binary");
@@ -153,12 +154,12 @@ public class Cell_Segmentation extends PlugInFrame {
     setLayout(null);
     setResizable(false);
   }
-  //
-  // /* Overrides windowClosing in PluginFrame. */
-  // public void windowClosing(WindowEvent e) {
-  //     super.windowClosing(e);
-  //     instance = null;
-  // }
+  
+  /* Overrides windowClosing in PluginFrame. */
+  public void windowClosing(WindowEvent e) {
+    super.windowClosing(e);
+    instance = null;
+  }
 
   // Get a copy of the current IP in Gray8 format
   public ImageProcessor get_current_ip() {
