@@ -20,7 +20,7 @@ public class Fiber_Size extends PlugInFrame {
 
   // Constant
   public final int WINDOW_WIDTH = 480;
-  public final int WINDOW_HEIGHT = 360;
+  public final int WINDOW_HEIGHT = 400;
 
   // External
   public ImagePlus orgImp;
@@ -81,7 +81,7 @@ public class Fiber_Size extends PlugInFrame {
     setResizable(false);
 
     // Add controls
-    yPos = getInsets().top;
+    yPos = getInsets().top + 10;
     this.add_step1_controls()
         .add_step2_controls()
         .add_step3_controls()
@@ -209,7 +209,7 @@ public class Fiber_Size extends PlugInFrame {
     });
     add(button);
 
-    label = new Label("Please select 'Add to Manager' in the following prompted dialog.", Label.LEFT);
+    label = new Label("Please select 'Add to Manager'.", Label.LEFT);
     label.setFont(new Font("Helvetica", Font.PLAIN, 11));
     label.setBounds(100, yPos + 30, WINDOW_WIDTH - 40, 14);
     add(label);
@@ -229,11 +229,11 @@ public class Fiber_Size extends PlugInFrame {
     add(label);
 
     label = new Label("Select by", Label.RIGHT);
-    label.setBounds(20, yPos + 30, 70, 14);
+    label.setBounds(20, yPos + 30, 90, 14);
     add(label);
 
     chnChoice = new Choice();
-    chnChoice.setBounds(100, yPos + 28, 100, 18);
+    chnChoice.setBounds(115, yPos + 28, 100, 18);
     for (int i = 0; i <= orgImp.getNChannels(); i++) {
       chnChoice.add(i == 0 ? "None" : "Channel " + Integer.toString(i));
     }
@@ -259,14 +259,14 @@ public class Fiber_Size extends PlugInFrame {
     });
     add(chnChoice);
 
-    label = new Label("and by", Label.CENTER);
-    label.setBounds(210, yPos + 30, 50, 14);
+    label = new Label("Threshold by", Label.RIGHT);
+    label.setBounds(20, yPos + 60, 90, 14);
     add(label);
 
     typChoice = new Choice();
     typChoice.add("Mode");
     typChoice.add("Mean");
-    typChoice.setBounds(270, yPos + 28, 60, 18);
+    typChoice.setBounds(115, yPos + 58, 60, 18);
     typChoice.addItemListener(new ItemListener() {
       public void itemStateChanged(ItemEvent e) {
         if (e.getStateChange() == ItemEvent.SELECTED) update_typSclBar();
@@ -274,12 +274,12 @@ public class Fiber_Size extends PlugInFrame {
     });
     add(typChoice);
 
-    label = new Label("Threshold", Label.RIGHT);
-    label.setBounds(20, yPos + 60, 70, 14);
+    label = new Label("at", Label.CENTER);
+    label.setBounds(180, yPos + 60, 20, 14);
     add(label);
 
     typSclBar = new Scrollbar(Scrollbar.HORIZONTAL, 0, 1, 1, 255);
-    typSclBar.setBounds(100, yPos + 60, 120, 14);
+    typSclBar.setBounds(205, yPos + 60, 145, 14);
     typSclBar.addAdjustmentListener(new AdjustmentListener() {
       public void adjustmentValueChanged(AdjustmentEvent e) {
         typThdFld.setText(Integer.toString(typSclBar.getValue()));
@@ -291,29 +291,27 @@ public class Fiber_Size extends PlugInFrame {
     typThdFld = new TextField();
     typThdFld.setEditable(false);
     typThdFld.setText(Integer.toString(typSclBar.getValue()));
-    typThdFld.setBounds(230, yPos + 55, 30, 24);
+    typThdFld.setBounds(360, yPos + 55, 30, 24);
     add(typThdFld);
 
     button = new Button("Select");
-    button.setBounds(270, yPos + 55, 60, 24);
+    button.setBounds(20, yPos + 85, 70, 24);
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) { select_by_type("select"); }
     });
     add(button);
 
     button = new Button("Reset");
-    button.setBounds(335, yPos + 55, 60, 24);
+    button.setBounds(100, yPos + 85, 70, 24);
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) { select_by_type("reset"); }
     });
     add(button);
 
-    // button = new Button("Filter");
-    // button.setBounds(400, yPos + 55, 60, 24);
-    // button.addActionListener(new ActionListener() {
-    //   public void actionPerformed(ActionEvent e) { select_by_type("filter"); }
-    // });
-    // add(button);
+    label = new Label("Please reset before change the channel.", Label.LEFT);
+    label.setFont(new Font("Helvetica", Font.PLAIN, 11));
+    label.setBounds(180, yPos + 90, WINDOW_WIDTH - 40, 14);
+    add(label);
 
     yPos += 125;
     return(this);
@@ -323,7 +321,7 @@ public class Fiber_Size extends PlugInFrame {
   public Fiber_Size add_version_info() {
     Label label;
 
-    label = new Label("Version 2.1.beta (May 5, 2015)", Label.RIGHT);
+    label = new Label("Version 2.1 (May 5, 2015)", Label.RIGHT);
     label.setFont(new Font("Helvetica", Font.PLAIN, 11));
     label.setBounds(10, WINDOW_HEIGHT-24, WINDOW_WIDTH - 20, 14);
     add(label);
@@ -463,29 +461,16 @@ public class Fiber_Size extends PlugInFrame {
     roiMgr.reset();
     for(int i = 0; i < rois.length; i++) {
       Roi roi = rois[i];
-      if (vals[i] > threshold) {
-        if (param.equals("select")) {
-          roi.setLineWidth(3);
-          roi.setStrokeColor(Color.YELLOW);
-        } else if (param.equals("reset")) {
-          roi.setLineWidth(1);
-          roi.setStrokeColor(Color.YELLOW);
-        }
+      if (vals[i] > threshold)
         roiMgr.addRoi(roi);
-      } else {
-        if (param.equals("reset")){
-          roi.setLineWidth(1);
-          roi.setStrokeColor(Color.YELLOW);
-          roiMgr.addRoi(roi);
-        }
-      }
+      else if (param.equals("reset"))
+        roiMgr.addRoi(roi);
     }
 
-    if (param.equals("select")) {
+    if (param.equals("select"))
       roiMgr.runCommand(orgImp, "Show All without labels");
-    } else if (param.equals("reset")) {
+    else if (param.equals("reset"))
       roiMgr.runCommand(orgImp, "Show All with labels");
-    }
   }
 
 }
