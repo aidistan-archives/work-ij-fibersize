@@ -8,16 +8,17 @@ import java.awt.event.*;
 
 
 /**
- * @version v2.0 (May 2, 2015) - implement a GUI
+ * @version v2.1 (May 5, 2015) - fix bugs and support fiber type selection
+ *          v2.0 (May 2, 2015) - implement a GUI
  *          v1.0 (May 1, 2015) - first implementation of this plugin
  * @author Aidi Stan (aidistan@live.cn)
  * @license the MIT license
  */
 
-public class Cell_Segmentation extends PlugInFrame {
+public class Fiber_Size extends PlugInFrame {
 
   // Constant
-  public final int WINDOW_WIDTH = 300;
+  public final int WINDOW_WIDTH = 480;
   public final int WINDOW_HEIGHT = 250;
 
   // External
@@ -25,15 +26,17 @@ public class Cell_Segmentation extends PlugInFrame {
 
   // Internal
   public static PlugInFrame instance; // Singleton
-  public ImagePlus imp;
+  public ImageListener impLst;
   public ImageProcessor ip;
+  public ImagePlus imp;
 
   // Controls
+  public TextField imgField;
   public Scrollbar sclBar;
-  public Checkbox chkBox;
+  public TextField thdField;
 
-  public Cell_Segmentation() {
-    super("Cell Segmentation");
+  public Fiber_Size() {
+    super("Fiber Size");
     if (instance != null) {
       instance.toFront();
       return;
@@ -42,6 +45,15 @@ public class Cell_Segmentation extends PlugInFrame {
       _imp = IJ.getImage();
       instance = this;
       imp = null;
+
+      impLst = new ImageListener() {
+        public void imageClosed(ImagePlus imp_) {
+          if (imp_ == imp) imp = null;
+        }
+        public void imageOpened(ImagePlus imp_) {}
+        public void imageUpdated(ImagePlus imp_) {}
+      };
+      ImagePlus.addImageListener(impLst);
 
       // Update the window
       WindowManager.addWindow(this);
@@ -56,46 +68,91 @@ public class Cell_Segmentation extends PlugInFrame {
   // return the title bar height.
   public void addNotify() {
     super.addNotify();
-    int top = getInsets().top + 10;
+    int top = getInsets().top + 20;
     Label label;
     Button button;
 
+    // For the whole frame
+    Font normFont = new Font("Helvetica", Font.PLAIN, 12);
+    Font boldFont = new Font("Helvetica", Font.BOLD, 12);
+    setFont(normFont);
+    setLayout(null);
+    setResizable(false);
+
     /*
-     * Binaryzation
+     * Step 1: Select Image
      */
 
-    label = new Label("Step 1: Binaryzation", Label.LEFT);
-    label.setFont(new Font("Helvetica", Font.BOLD, 12));
+    label = new Label("Step 1: Select Image", Label.LEFT);
+    label.setFont(boldFont);
     label.setBounds(10, top, WINDOW_WIDTH - 20, 14);
     add(label);
 
-    label = new Label("Threshold", Label.LEFT);
-    label.setFont(new Font("Helvetica", Font.PLAIN, 12));
-    label.setBounds(20, top + 30, 70, 14);
-    add(label);
+    imgField = new TextField();
+    imgField.setEditable(false);
+    imgField.setText(_imp.getTitle());
+    imgField.setBounds(20, top + 25, 260, 24);
+    add(imgField);
 
-    sclBar = new Scrollbar(Scrollbar.HORIZONTAL, 0, 1, 0, 255);
-    sclBar.setBounds(100, top + 28, WINDOW_WIDTH - 120, 16);
-    sclBar.setValue(get_current_ip().getAutoThreshold());
-    add(sclBar);
-
-    button = new Button("Binary");
-    button.setFont(new Font("Helvetica", Font.PLAIN, 12));
-    button.setBounds(20, top + 55, 73, 24);
+    button = new Button("Change to current");
+    button.setBounds(300, top + 25, 160, 24);
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         if (imp != null) imp.close();
-        binary();
+        RoiManager roiMgr = RoiManager.getInstance();
+        if (roiMgr != null) { roiMgr.reset(); roiMgr.close(); }
+
+        _imp = IJ.getImage();
+        imgField.setText(_imp.getTitle());
+      }
+    });
+    add(button);
+
+    /*
+     * Step 2: Binary
+     */
+
+    label = new Label("Step 2: Binary Boundry", Label.LEFT);
+    label.setFont(boldFont);
+    label.setBounds(10, top + 65, WINDOW_WIDTH - 20, 14);
+    add(label);
+
+    label = new Label("Fiber Boundry", Label.LEFT);
+    label.setBounds(20, top + 95, 90, 14);
+    add(label);
+
+    sclBar = new Scrollbar(Scrollbar.HORIZONTAL,
+      get_current_ip().getAutoThreshold(), 1, 1, 255);
+    sclBar.setBounds(120, top + 95, 100, 14);
+    sclBar.addAdjustmentListener(new AdjustmentListener() {
+      public void adjustmentValueChanged(AdjustmentEvent e) {
+        thdField.setText(Integer.toString(sclBar.getValue()));
+        if (imp != null) update_binaryzation();
+      }
+    });
+    add(sclBar);
+
+    thdField = new TextField();
+    thdField.setEditable(false);
+    thdField.setText(Integer.toString(sclBar.getValue()));
+    thdField.setBounds(230, top + 90, 30, 24);
+    add(thdField);
+
+    button = new Button("Binary");
+    button.setBounds(270, top + 90, 60, 24);
+    button.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        if (imp != null) imp.close();
+        new_binaryzation();
       }
     });
     add(button);
 
     button = new Button("Erode");
-    button.setFont(new Font("Helvetica", Font.PLAIN, 12));
-    button.setBounds(113, top + 55, 73, 24);
+    button.setBounds(335, top + 90, 60, 24);
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        if (imp == null) binary();
+        if (imp == null) new_binaryzation();
         ip.erode();
         imp.updateAndDraw();
       }
@@ -103,11 +160,10 @@ public class Cell_Segmentation extends PlugInFrame {
     add(button);
 
     button = new Button("Dilate");
-    button.setFont(new Font("Helvetica", Font.PLAIN, 12));
-    button.setBounds(206, top + 55, 73, 24);
+    button.setBounds(400, top + 90, 60, 24);
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        if (imp == null) binary();
+        if (imp == null) new_binaryzation();
         ip.dilate();
         imp.updateAndDraw();
       }
@@ -115,81 +171,81 @@ public class Cell_Segmentation extends PlugInFrame {
     add(button);
 
     /*
-     * Particle Analysis
+     * Step 3: Analyze Particles
      */
 
-    label = new Label("Step 2: Particle Analysis", Label.LEFT);
-    label.setFont(new Font("Helvetica", Font.BOLD, 12));
-    label.setBounds(10, top + 100, WINDOW_WIDTH - 40, 14);
-    add(label);
-
-    label = new Label("Please select 'Add to Manager'", Label.LEFT);
-    label.setFont(new Font("Helvetica", Font.PLAIN, 12));
-    label.setBounds(20, top + 130, WINDOW_WIDTH - 40, 14);
+    label = new Label("Step 3: Analyze Particles", Label.LEFT);
+    label.setFont(boldFont);
+    label.setBounds(10, top + 125, WINDOW_WIDTH - 20, 14);
     add(label);
 
     button = new Button("Analyze");
-    button.setFont(new Font("Helvetica", Font.PLAIN, 12));
-    button.setBounds(20, top + 155, 73, 24);
+    button.setBounds(20, top + 150, 70, 24);
     button.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
+        if (imp == null) new_binaryzation();
         RoiManager roiMgr = RoiManager.getInstance();
         if (roiMgr != null) { roiMgr.reset(); roiMgr.close(); }
-        if (imp == null) binary();
         analyze();
       }
     });
     add(button);
 
-    chkBox = new Checkbox("Keep binary image", false);
-    chkBox.setFont(new Font("Helvetica", Font.PLAIN, 12));
-    chkBox.setBounds(120, top + 155, 160, 24);
-    add(chkBox);
+    label = new Label("Please select 'Add to Manager' in the following prompted dialog.", Label.LEFT);
+    label.setFont(new Font("Helvetica", Font.PLAIN, 11));
+    label.setBounds(100, top + 155, WINDOW_WIDTH - 40, 14);
+    add(label);
 
-    label = new Label("Version 2.0 (May 2, 2015)", Label.RIGHT);
+    label = new Label("Version 2.1.alpha (May 5, 2015)", Label.RIGHT);
     label.setFont(new Font("Helvetica", Font.PLAIN, 11));
     label.setBounds(10, WINDOW_HEIGHT-24, WINDOW_WIDTH - 20, 14);
     add(label);
-
-    setLayout(null);
-    setResizable(false);
   }
-  
+
   /* Overrides windowClosing in PluginFrame. */
   public void windowClosing(WindowEvent e) {
     super.windowClosing(e);
+
+    // Close the imp
+    if (imp != null) imp.close();
+    ImagePlus.removeImageListener(impLst);
+
+    // For singleton
     instance = null;
   }
 
-  // Get a copy of the current IP in Gray8 format
+  // Get a copy of the current image in Gray8 format
   public ImageProcessor get_current_ip() {
     int oriC = _imp.getC();
     _imp.setC(_imp.getNChannels());
-    ImageProcessor ip = _imp.getChannelProcessor();
-    ImageProcessor ip_ = ip.convertToByte(true);
+    ImageProcessor ip = _imp.getChannelProcessor().convertToByte(true);
     _imp.setC(oriC);
-    return(ip_);
+    return(ip);
   }
 
-  // Do the binaryzation
-  public void binary() {
+  // Create a binaryzation
+  public void new_binaryzation() {
     ip = get_current_ip();
     ip.threshold(sclBar.getValue());
-    imp = new ImagePlus("Cell Segmentation (Threshold : " + Integer.toString(sclBar.getValue()) + ")", ip);
+    imp = new ImagePlus("Threshold : " + Integer.toString(sclBar.getValue()), ip);
     imp.show();
     imp.updateAndDraw();
-    imp.addImageListener(new ImageListener() {
-      public void imageClosed(ImagePlus imp) { ((Cell_Segmentation)instance).imp = null; }
-      public void imageOpened(ImagePlus imp) {}
-      public void imageUpdated(ImagePlus imp) {}
-    });
   }
 
-  // Do the analysis
+  // Update the binaryzation
+  public void update_binaryzation() {
+    ip = get_current_ip();
+    ip.threshold(sclBar.getValue());
+    imp.setProcessor(ip);
+    imp.setTitle("Threshold : " + Integer.toString(sclBar.getValue()));
+  }
+
+  // Analyze Particles
   public void analyze() {
     ParticleAnalyzer pa = new ParticleAnalyzer();
-    pa.showDialog();
+    if (!pa.showDialog()) return;
     pa.analyze(imp, ip);
+    imp.close();
 
     // Rename
     RoiManager roiMgr = RoiManager.getInstance();
@@ -202,12 +258,7 @@ public class Cell_Segmentation extends PlugInFrame {
       roiMgr.addRoi(roi);
     }
 
-    if (chkBox.getState()) {
-      roiMgr.runCommand(imp, "Show All with labels");
-    } else {
-      imp.close();
-      roiMgr.runCommand(_imp, "Show All with labels");
-    }
+    roiMgr.runCommand(_imp, "Show All with labels");
   }
 
 }
