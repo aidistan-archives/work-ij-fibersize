@@ -7,12 +7,12 @@ import ij.plugin.frame.*;
 import java.awt.*;
 import java.awt.event.*;
 
-
 /**
- * @version v2.1 (May 5, 2015) - fix bugs and support fiber type selection
- *          v2.0 (May 2, 2015) - implement a GUI
- *          v1.0 (May 1, 2015) - first implementation of this plugin
- * @author Aidi Stan (aidistan@live.cn)
+ * @version v2.2 (Jul 26, 2016) - provide a utility macro
+ *          v2.1 (May  5, 2015) - fix bugs and support fiber type selection
+ *          v2.0 (May  2, 2015) - implement a GUI
+ *          v1.0 (May  1, 2015) - first implementation of this plugin
+ * @author Aidi Stan (aidistan@live.com)
  * @license the MIT license
  */
 
@@ -81,7 +81,7 @@ public class Fiber_Size extends PlugInFrame {
     setResizable(false);
 
     // Add controls
-    yPos = getInsets().top + 10;
+    yPos = getInsets().top + 15;
     this.add_step1_controls()
         .add_step2_controls()
         .add_step3_controls()
@@ -321,7 +321,7 @@ public class Fiber_Size extends PlugInFrame {
   public Fiber_Size add_version_info() {
     Label label;
 
-    label = new Label("Version 2.1 (May 5, 2015)", Label.RIGHT);
+    label = new Label("Version 2.2 (Jul 26, 2016)", Label.RIGHT);
     label.setFont(new Font("Helvetica", Font.PLAIN, 11));
     label.setBounds(10, WINDOW_HEIGHT-24, WINDOW_WIDTH - 20, 14);
     add(label);
