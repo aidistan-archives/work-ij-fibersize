@@ -403,7 +403,7 @@ public class Fiber_Size extends PlugInFrame {
     ImagePlus imp = new ImagePlus(null, get_ip(chnChoice.getSelectedIndex()));
     RoiManager roiMgr = RoiManager.getInstance();
     roiMgr.runCommand(imp, "Deselect");
-    IJ.run("Set Measurements...", "mean modal min redirect=None decimal=1");
+    IJ.run("Set Measurements...", "area mean modal redirect=None decimal=1");
     roiMgr.runCommand(imp, "Measure");
     update_typSclBar();
   }
