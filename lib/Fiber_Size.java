@@ -308,7 +308,7 @@ public class Fiber_Size extends PlugInFrame {
     });
     add(button);
 
-    label = new Label("Please reset before change the channel.", Label.LEFT);
+    label = new Label("Please reset before changing the channel.", Label.LEFT);
     label.setFont(new Font("Helvetica", Font.PLAIN, 11));
     label.setBounds(180, yPos + 90, WINDOW_WIDTH - 40, 14);
     add(label);
