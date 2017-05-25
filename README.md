@@ -17,4 +17,4 @@ Leave your message as a [new issue](https://github.com/aidistan/ij-fibersize/iss
 
 ## License
 
-Copyright (c) 2015-2016 Aidi Stan under the [MIT license](https://github.com/aidistan/ij-fibersize/blob/master/LICENSE).
+Copyright (c) 2015-2017 Aidi Stan under the [MIT license](https://github.com/aidistan/ij-fibersize/blob/master/LICENSE).
